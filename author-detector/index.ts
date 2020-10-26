@@ -20,7 +20,7 @@ const getOrganizationMembers = async () => {
 };
 
 const getRequiredInput = (name: string) => {
-    const value = core.getInput('token');
+    const value = core.getInput(name);
     if (value) {
         return value;
     }
@@ -48,7 +48,7 @@ async function run(): Promise<void> {
             team.includes(issue.user.login.toLowerCase()) ? 'coreLabel' : 'communityLabel'
         );
 
-        api.issues.addLabels({
+        await api.issues.addLabels({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: github.context.issue.number,
