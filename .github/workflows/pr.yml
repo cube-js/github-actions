@@ -1,6 +1,6 @@
-name: Issues
+name: Pull Requests
 on:
-  pull_request:
+  issues:
     types: [opened]
 
 jobs:
@@ -19,5 +19,5 @@ jobs:
         uses: ./actions/author-detector
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          coreLabel: pr:core
-          communityLabel: pr:community
+          coreLabel: issue:core
+          communityLabel: issue:community

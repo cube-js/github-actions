@@ -32,7 +32,23 @@ abstract class AbstractAction {
 }
 
 class AuthorDetector extends AbstractAction {
-    public async handle(): Promise<void> {
+    protected async addLabel(login: string) {
+        const team = await this.getOrganizationMembers();
+        const label = getRequiredInput(
+            team.includes(login.toLowerCase()) ? 'coreLabel' : 'communityLabel'
+        );
+
+        await this.api.issues.addLabels({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: github.context.issue.number,
+            labels: [
+                label,
+            ],
+        });
+    }
+
+    protected async onCreatedIssue() {
         const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
@@ -40,23 +56,33 @@ class AuthorDetector extends AbstractAction {
         });
 
         if (issue.user.login) {
-            const team = await this.getOrganizationMembers();
-            const label = getRequiredInput(
-                team.includes(issue.user.login.toLowerCase()) ? 'coreLabel' : 'communityLabel'
-            );
-    
-            await this.api.issues.addLabels({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                issue_number: github.context.issue.number,
-                labels: [
-                    label,
-                ],
-            });
+            await this.addLabel(issue.user.login);
         }
     }
 
+    protected async onCreatedPullRequest() {
+        const { data: pullRequest } = await this.api.pulls.get({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            pull_number: Number(github.context.payload.pull_request?.number),
+        });
+
+        if (pullRequest.user.login) {
+            await this.addLabel(pullRequest.user.login);
+        }
+    }
+
+    public async handle(): Promise<void> {
+        if (github.context.payload.pull_request) {
+            return this.onCreatedPullRequest();
+        }
+
+        return this.onCreatedIssue();
+    }
+
     protected async getOrganizationMembers() {
+        this.api.orgs.listMembershipsForAuthenticatedUser
+
         return [
             'igorlukanin',
             'jkotova',
