@@ -2,21 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = require("@actions/core");
 const github = require("@actions/github");
-const getOrganizationMembers = async () => {
-    return [
-        'igorlukanin',
-        'jkotova',
-        'keydunov',
-        'levhav',
-        'ovr',
-        'paveltiunov',
-        'rpaik',
-        'RusovDmitriy',
-        'tenphi',
-        'vasilev-alex',
-        'YakovlevCoded'
-    ].map((v) => v.toLowerCase());
-};
 const getRequiredInput = (name) => {
     const value = core.getInput(name);
     if (value) {
@@ -24,18 +9,30 @@ const getRequiredInput = (name) => {
     }
     throw new Error(`Unable to get require input parameter: ${name}`);
 };
-async function run() {
-    try {
-        const api = github.getOctokit(getRequiredInput('token'));
-        const { data: issue } = await api.issues.get({
+class AbstractAction {
+    constructor(api = github.getOctokit(getRequiredInput('token'))) {
+        this.api = api;
+    }
+    async run() {
+        try {
+            await this.handle();
+        }
+        catch (error) {
+            core.setFailed(error.message);
+        }
+    }
+}
+class AuthorDetector extends AbstractAction {
+    async handle() {
+        const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: github.context.issue.number,
         });
         if (issue.user.login) {
-            const team = await getOrganizationMembers();
+            const team = await this.getOrganizationMembers();
             const label = getRequiredInput(team.includes(issue.user.login.toLowerCase()) ? 'coreLabel' : 'communityLabel');
-            await api.issues.addLabels({
+            await this.api.issues.addLabels({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
                 issue_number: github.context.issue.number,
@@ -45,9 +42,22 @@ async function run() {
             });
         }
     }
-    catch (error) {
-        core.setFailed(error.message);
+    async getOrganizationMembers() {
+        return [
+            'igorlukanin',
+            'jkotova',
+            'keydunov',
+            'levhav',
+            'ovr',
+            'paveltiunov',
+            'rpaik',
+            'RusovDmitriy',
+            'tenphi',
+            'vasilev-alex',
+            'YakovlevCoded'
+        ].map((v) => v.toLowerCase());
     }
+    ;
 }
-run();
+new AuthorDetector().run();
 //# sourceMappingURL=index.js.map

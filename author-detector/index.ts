@@ -1,24 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github';
 
-const getOrganizationMembers = async () => {
-    return [
-        'igorlukanin',
-        'jkotova',
-        'keydunov',
-        'levhav',
-        'ovr',
-        'paveltiunov',
-        'rpaik',
-        'RusovDmitriy',
-        'tenphi',
-        'vasilev-alex',
-        'YakovlevCoded'
-    ].map(
-        (v) => v.toLowerCase()
-    );
-};
-
 const getRequiredInput = (name: string) => {
     const value = core.getInput(name);
     if (value) {
@@ -30,37 +12,67 @@ const getRequiredInput = (name: string) => {
     );
 }
 
-async function run(): Promise<void> {
-  try {
-    const api = github.getOctokit(
-        getRequiredInput('token')
-    );
+abstract class AbstractAction {
+    constructor(
+        protected readonly api = github.getOctokit(
+            getRequiredInput('token')
+        )
+    ) {
+    }
 
-    const { data: issue } = await api.issues.get({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        issue_number: github.context.issue.number,
-    });
+    public async run() {
+        try {
+          await this.handle();
+        } catch (error) {
+          core.setFailed(error.message)
+        }
+    }
 
-    if (issue.user.login) {
-        const team = await getOrganizationMembers();
-        const label = getRequiredInput(
-            team.includes(issue.user.login.toLowerCase()) ? 'coreLabel' : 'communityLabel'
-        );
+    abstract async handle(): Promise<void>;
+}
 
-        await api.issues.addLabels({
+class AuthorDetector extends AbstractAction {
+    public async handle(): Promise<void> {
+        const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: github.context.issue.number,
-            labels: [
-                label,
-            ],
         });
+
+        if (issue.user.login) {
+            const team = await this.getOrganizationMembers();
+            const label = getRequiredInput(
+                team.includes(issue.user.login.toLowerCase()) ? 'coreLabel' : 'communityLabel'
+            );
+    
+            await this.api.issues.addLabels({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                issue_number: github.context.issue.number,
+                labels: [
+                    label,
+                ],
+            });
+        }
     }
 
-  } catch (error) {
-    core.setFailed(error.message)
-  }
+    protected async getOrganizationMembers() {
+        return [
+            'igorlukanin',
+            'jkotova',
+            'keydunov',
+            'levhav',
+            'ovr',
+            'paveltiunov',
+            'rpaik',
+            'RusovDmitriy',
+            'tenphi',
+            'vasilev-alex',
+            'YakovlevCoded'
+        ].map(
+            (v) => v.toLowerCase()
+        );
+    };
 }
 
-run();
+new AuthorDetector().run();
