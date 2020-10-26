@@ -1,0 +1,15 @@
+name: Author Detector
+description: Add label for core team and community members
+inputs:
+  token:
+    description: GitHub token with issue, comment, and label read/write permissions
+    default: ${{ github.token }}
+  coreLabel:
+    description: Label for core authors
+    default: core team
+  communityLabel:
+    description: Label for community authors
+    default: community contribution
+runs:
+  using: 'node12'
+  main: 'index.js'

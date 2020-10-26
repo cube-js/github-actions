@@ -1,0 +1,31 @@
+{
+  "name": "github-actions",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cube-js/github-actions.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cube-js/github-actions/issues"
+  },
+  "homepage": "https://github.com/cube-js/github-actions#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.6",
+    "@actions/github": "^4.0.0",
+    "husky": "^4.3.0",
+    "typescript": "^4.0.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run build && git add \"**/*.js\""
+    }
+  }
+}
