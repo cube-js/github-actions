@@ -92,12 +92,21 @@ class AuthorDetector extends AbstractAction {
     }
 
     protected async checkMembershipForUser(username: string, org: string) {
-        const response = await this.api.orgs.checkMembershipForUser({
-            org,
-            username,
-        });
+        // @todo Find a better way...
+        try {
+            const response = await this.api.orgs.checkMembershipForUser({
+                org,
+                username,
+            });
 
-        return response.status === 204;
+            return response.status === 204;
+        } catch (e) {
+            if (e.message === 'User does not exist or is not a public member of the organization') {
+                return false;
+            }
+
+            throw e;
+        }
     };
 }
 
