@@ -24,8 +24,18 @@ class AbstractAction {
 }
 class AuthorDetector extends AbstractAction {
     async addLabel(login) {
-        const team = await this.getOrganizationMembers();
-        const label = getRequiredInput(team.includes(login.toLowerCase()) ? 'coreLabel' : 'communityLabel');
+        const isMember = await this.checkMembershipForUser(login.toLowerCase());
+        if (isMember) {
+            if (getRequiredInput('addCoreLabel') === 'false') {
+                return;
+            }
+        }
+        else {
+            if (getRequiredInput('addCommunityLabel') === 'false') {
+                return;
+            }
+        }
+        const label = getRequiredInput(isMember ? 'coreLabel' : 'communityLabel');
         await this.api.issues.addLabels({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
@@ -62,21 +72,12 @@ class AuthorDetector extends AbstractAction {
         }
         return this.onCreatedIssue();
     }
-    async getOrganizationMembers() {
-        this.api.orgs.listMembershipsForAuthenticatedUser;
-        return [
-            'igorlukanin',
-            'jkotova',
-            'keydunov',
-            'levhav',
-            'ovr',
-            'paveltiunov',
-            'rpaik',
-            'RusovDmitriy',
-            'tenphi',
-            'vasilev-alex',
-            'YakovlevCoded'
-        ].map((v) => v.toLowerCase());
+    async checkMembershipForUser(username) {
+        const response = await this.api.orgs.checkMembershipForUser({
+            org: 'cubejs',
+            username,
+        });
+        return response.status === 204;
     }
     ;
 }

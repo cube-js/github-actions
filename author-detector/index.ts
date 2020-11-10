@@ -33,9 +33,20 @@ abstract class AbstractAction {
 
 class AuthorDetector extends AbstractAction {
     protected async addLabel(login: string) {
-        const team = await this.getOrganizationMembers();
+        const isMember = await this.checkMembershipForUser(login.toLowerCase());
+
+        if (isMember) {
+            if (getRequiredInput('addCoreLabel') === 'false') {
+                return;
+            }
+        } else {
+            if (getRequiredInput('addCommunityLabel') === 'false') {
+                return;
+            }
+        }
+
         const label = getRequiredInput(
-            team.includes(login.toLowerCase()) ? 'coreLabel' : 'communityLabel'
+            isMember ? 'coreLabel' : 'communityLabel'
         );
 
         await this.api.issues.addLabels({
@@ -80,24 +91,13 @@ class AuthorDetector extends AbstractAction {
         return this.onCreatedIssue();
     }
 
-    protected async getOrganizationMembers() {
-        this.api.orgs.listMembershipsForAuthenticatedUser
+    protected async checkMembershipForUser(username: string) {
+        const response = await this.api.orgs.checkMembershipForUser({
+            org: 'cubejs',
+            username,
+        });
 
-        return [
-            'igorlukanin',
-            'jkotova',
-            'keydunov',
-            'levhav',
-            'ovr',
-            'paveltiunov',
-            'rpaik',
-            'RusovDmitriy',
-            'tenphi',
-            'vasilev-alex',
-            'YakovlevCoded'
-        ].map(
-            (v) => v.toLowerCase()
-        );
+        return response.status === 204;
     };
 }
 

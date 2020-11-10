@@ -5,11 +5,17 @@ inputs:
     description: GitHub token with issue, comment, and label read/write permissions
     default: ${{ github.token }}
   coreLabel:
-    description: Label for core authors
+    description: Label name for core authors
     default: 'core team'
+  addCoreLabel:
+    description: Label for for core authors?
+    default: "true"
   communityLabel:
-    description: Label for community authors
+    description: Label name for community authors
     default: 'community contribution'
+  addCommunityLabel:
+    description: Label for community authors?
+    default: "true"
 runs:
   using: 'node12'
   main: 'index.js'
