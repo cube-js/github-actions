@@ -24,7 +24,7 @@ class AbstractAction {
 }
 class AuthorDetector extends AbstractAction {
     async addLabel(login) {
-        const isMember = await this.checkMembershipForUser(login.toLowerCase());
+        const isMember = await this.checkMembershipForUser(login.toLowerCase(), github.context.repo.owner);
         if (isMember) {
             if (getRequiredInput('addCoreLabel') === 'false') {
                 return;
@@ -72,9 +72,9 @@ class AuthorDetector extends AbstractAction {
         }
         return this.onCreatedIssue();
     }
-    async checkMembershipForUser(username) {
+    async checkMembershipForUser(username, org) {
         const response = await this.api.orgs.checkMembershipForUser({
-            org: 'cubejs',
+            org,
             username,
         });
         return response.status === 204;
