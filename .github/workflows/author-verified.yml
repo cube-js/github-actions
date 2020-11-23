@@ -1,7 +1,7 @@
-name: Pull Requests
+name: Author Detector for Pull Requests
 on:
-  issues:
-    types: [opened]
+  schedule:
+    - cron: "*/5 * * *"
 
 jobs:
   main:
