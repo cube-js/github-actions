@@ -29,3 +29,4 @@ jobs:
           communityLabel: pr:community
 ```
 
+# LICENSE
