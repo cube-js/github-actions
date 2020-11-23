@@ -20,16 +20,12 @@ class AuthorDetector extends AutomaticAction {
             }
         }
 
-        const label = getRequiredInput(
-            isMember ? CORE_LABEL : COMMUNITY_LABEL
-        );
-
         await this.api.issues.addLabels({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: issue.number,
             labels: [
-                label,
+                isMember ? CORE_LABEL : COMMUNITY_LABEL,
             ],
         });
     }
