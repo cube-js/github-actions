@@ -48,7 +48,7 @@ class AuthorDetector extends AutomaticAction {
         }
     }
 
-    protected async onP() {
+    protected async onPullRequestOpened() {
         const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,

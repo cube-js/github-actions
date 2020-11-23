@@ -5,6 +5,8 @@ import {WebhookPayload} from "@actions/github/lib/interfaces";
 
 export class AutomaticAction extends AbstractAction {
     public async handle(): Promise<void> {
+        console.info(github.context.eventName);
+
         if (github.context.payload) {
             return this.handleWebhookPayload(github.context.payload);
         }
@@ -19,7 +21,7 @@ export class AutomaticAction extends AbstractAction {
             case 'pull_request':
                 return this.handlePullRequests();
             case 'pull_request_target':
-                return this.handlePullRequests();
+                return this.onPullRequestTarget();
             default:
                 throw new Error(
                     `Unsupported eventName: "${github.context.eventName}"`
@@ -29,7 +31,7 @@ export class AutomaticAction extends AbstractAction {
 
     protected async handleWebhookPayload(payload: WebhookPayload)
     {
-        console.log(payload);
+        console.info(payload);
 
         if (payload.action) {
 
@@ -46,7 +48,7 @@ export class AutomaticAction extends AbstractAction {
      */
     protected async onPullRequestTarget()
     {
-
+        return this.onPullRequestOpened({ readonly: false });
     }
 
     protected async handleIssues()
@@ -75,7 +77,13 @@ export class AutomaticAction extends AbstractAction {
 
     protected async handlePullRequests()
     {
+        // @todo
+        return this.onPullRequestOpened({ readonly: true, });
+    }
 
+    protected async onPullRequestOpened(ctx: { readonly: boolean })
+    {
+        throw new Error('Not implemented');
     }
 
     protected async onIssueOpened()

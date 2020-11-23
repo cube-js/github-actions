@@ -36,7 +36,7 @@ class AuthorDetector extends automatic_action_1.AutomaticAction {
             await this.addLabel(issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
         }
     }
-    async onP() {
+    async onPullRequestOpened() {
         const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,

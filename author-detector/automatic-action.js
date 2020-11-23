@@ -5,6 +5,7 @@ const action_1 = require("./action");
 const github = require("@actions/github");
 class AutomaticAction extends action_1.AbstractAction {
     async handle() {
+        console.info(github.context.eventName);
         if (github.context.payload) {
             return this.handleWebhookPayload(github.context.payload);
         }
@@ -18,13 +19,13 @@ class AutomaticAction extends action_1.AbstractAction {
             case 'pull_request':
                 return this.handlePullRequests();
             case 'pull_request_target':
-                return this.handlePullRequests();
+                return this.onPullRequestTarget();
             default:
                 throw new Error(`Unsupported eventName: "${github.context.eventName}"`);
         }
     }
     async handleWebhookPayload(payload) {
-        console.log(payload);
+        console.info(payload);
         if (payload.action) {
         }
     }
@@ -37,6 +38,7 @@ class AutomaticAction extends action_1.AbstractAction {
      *
      */
     async onPullRequestTarget() {
+        return this.onPullRequestOpened({ readonly: false });
     }
     async handleIssues() {
         if (github.context.issue) {
@@ -56,6 +58,11 @@ class AutomaticAction extends action_1.AbstractAction {
         throw new Error(`Unknown context`);
     }
     async handlePullRequests() {
+        // @todo
+        return this.onPullRequestOpened({ readonly: true, });
+    }
+    async onPullRequestOpened(ctx) {
+        throw new Error('Not implemented');
     }
     async onIssueOpened() {
         throw new Error('Not implemented');
