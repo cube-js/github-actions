@@ -2,14 +2,18 @@ import {AbstractAction} from "./action";
 import * as github from "@actions/github";
 import * as Webhooks from '@octokit/webhooks'
 import {WebhookPayload} from "@actions/github/lib/interfaces";
+import {WebhookEvent} from "@octokit/webhooks/dist-types/types";
+import {EventPayloads} from "@octokit/webhooks/dist-types/generated/event-payloads";
+
+export type OnPullRequestOpenedCtx = { readonly: boolean };
 
 export class AutomaticAction extends AbstractAction {
     public async handle(): Promise<void> {
-        console.info(github.context.eventName);
-
-        if (github.context.payload) {
-            return this.handleWebhookPayload(github.context.payload);
-        }
+        // console.info(github.context.eventName);
+        //
+        // if (github.context.payload) {
+        //     return this.handleWebhookPayload(github.context.payload);
+        // }
 
         switch (github.context.eventName) {
             case 'schedule':
@@ -21,7 +25,7 @@ export class AutomaticAction extends AbstractAction {
             case 'pull_request':
                 return this.handlePullRequests();
             case 'pull_request_target':
-                return this.onPullRequestTarget();
+                return this.onPullRequestTarget(github.context.payload);
             default:
                 throw new Error(
                     `Unsupported eventName: "${github.context.eventName}"`
@@ -29,14 +33,14 @@ export class AutomaticAction extends AbstractAction {
         }
     }
 
-    protected async handleWebhookPayload(payload: WebhookPayload)
-    {
-        console.info(payload);
-
-        if (payload.action) {
-
-        }
-    }
+    // protected async handleWebhookPayload(payload: WebhookPayload)
+    // {
+    //     console.info(payload);
+    //
+    //     if (payload.action) {
+    //
+    //     }
+    // }
 
     /**
      * This event is similar to pull_request, except that it runs in the context of the base repository of
@@ -46,9 +50,12 @@ export class AutomaticAction extends AbstractAction {
      * that label and comment on pull requests, based on the contents of the event payload.
      *
      */
-    protected async onPullRequestTarget()
+    protected async onPullRequestTarget(payload: any)
     {
-        return this.onPullRequestOpened({ readonly: false });
+        switch (payload.action) {
+            case 'opened':
+                return this.onPullRequestTargetOpened(payload);
+        }
     }
 
     protected async handleIssues()
@@ -81,7 +88,12 @@ export class AutomaticAction extends AbstractAction {
         return this.onPullRequestOpened({ readonly: true, });
     }
 
-    protected async onPullRequestOpened(ctx: { readonly: boolean })
+    protected async onPullRequestTargetOpened(payload: EventPayloads.WebhookPayloadPullRequest)
+    {
+        throw new Error('Not implemented');
+    }
+
+    protected async onPullRequestOpened(ctx: OnPullRequestOpenedCtx)
     {
         throw new Error('Not implemented');
     }

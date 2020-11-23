@@ -36,14 +36,20 @@ class AuthorDetector extends automatic_action_1.AutomaticAction {
             await this.addLabel(issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
         }
     }
-    async onPullRequestOpened() {
+    async onPullRequestTargetOpened(payload) {
+        await this.addLabel(payload, await this.checkMembershipForUser(payload.sender.login.toLowerCase(), payload.repository.owner.login));
+    }
+    async onPullRequestOpened(ctx) {
+        if (ctx.readonly) {
+            return;
+        }
         const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             issue_number: github.context.issue.number,
         });
         if (issue.user.login) {
-            await this.addLabel(issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
+            await this.addLabel(github.context.issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
         }
     }
     async onSchedule() {

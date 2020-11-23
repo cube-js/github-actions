@@ -1,7 +1,9 @@
 import * as github from '@actions/github';
-import {AutomaticAction} from "./automatic-action";
+import {AutomaticAction, OnPullRequestOpenedCtx} from "./automatic-action";
 import {getRequiredInput} from "./action";
 import {PullsListResponseData} from "@octokit/types/dist-types/generated/Endpoints";
+import {WebhookEvent} from "@octokit/webhooks/dist-types/types";
+import {EventPayloads} from "@octokit/webhooks/dist-types/generated/event-payloads";
 
 type Unpacked<T> = T extends (infer U)[] ? U : T;
 
@@ -48,7 +50,21 @@ class AuthorDetector extends AutomaticAction {
         }
     }
 
-    protected async onPullRequestOpened() {
+    protected async onPullRequestTargetOpened(payload: EventPayloads.WebhookPayloadPullRequest) {
+        await this.addLabel(
+            payload,
+            await this.checkMembershipForUser(
+                payload.sender.login.toLowerCase(),
+                payload.repository.owner.login
+            )
+        );
+    }
+
+    protected async onPullRequestOpened(ctx: OnPullRequestOpenedCtx) {
+        if (ctx.readonly) {
+            return;
+        }
+
         const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
@@ -57,7 +73,7 @@ class AuthorDetector extends AutomaticAction {
 
         if (issue.user.login) {
             await this.addLabel(
-                issue,
+                github.context.issue,
                 await this.checkMembershipForUser(
                     issue.user.login.toLowerCase(),
                     github.context.repo.owner

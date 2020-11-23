@@ -5,10 +5,11 @@ const action_1 = require("./action");
 const github = require("@actions/github");
 class AutomaticAction extends action_1.AbstractAction {
     async handle() {
-        console.info(github.context.eventName);
-        if (github.context.payload) {
-            return this.handleWebhookPayload(github.context.payload);
-        }
+        // console.info(github.context.eventName);
+        //
+        // if (github.context.payload) {
+        //     return this.handleWebhookPayload(github.context.payload);
+        // }
         switch (github.context.eventName) {
             case 'schedule':
                 return this.onSchedule();
@@ -19,16 +20,19 @@ class AutomaticAction extends action_1.AbstractAction {
             case 'pull_request':
                 return this.handlePullRequests();
             case 'pull_request_target':
-                return this.onPullRequestTarget();
+                return this.onPullRequestTarget(github.context.payload);
             default:
                 throw new Error(`Unsupported eventName: "${github.context.eventName}"`);
         }
     }
-    async handleWebhookPayload(payload) {
-        console.info(payload);
-        if (payload.action) {
-        }
-    }
+    // protected async handleWebhookPayload(payload: WebhookPayload)
+    // {
+    //     console.info(payload);
+    //
+    //     if (payload.action) {
+    //
+    //     }
+    // }
     /**
      * This event is similar to pull_request, except that it runs in the context of the base repository of
      * the pull request, rather than in the merge commit. This means that you can more safely make your
@@ -37,8 +41,11 @@ class AutomaticAction extends action_1.AbstractAction {
      * that label and comment on pull requests, based on the contents of the event payload.
      *
      */
-    async onPullRequestTarget() {
-        return this.onPullRequestOpened({ readonly: false });
+    async onPullRequestTarget(payload) {
+        switch (payload.action) {
+            case 'opened':
+                return this.onPullRequestTargetOpened(payload);
+        }
     }
     async handleIssues() {
         if (github.context.issue) {
@@ -60,6 +67,9 @@ class AutomaticAction extends action_1.AbstractAction {
     async handlePullRequests() {
         // @todo
         return this.onPullRequestOpened({ readonly: true, });
+    }
+    async onPullRequestTargetOpened(payload) {
+        throw new Error('Not implemented');
     }
     async onPullRequestOpened(ctx) {
         throw new Error('Not implemented');
