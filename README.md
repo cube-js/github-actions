@@ -9,6 +9,11 @@
 Example of usage:
 
 ```yml
+name: Issues
+on:
+  pull_request:
+    types: [opened]
+
 jobs:
   main:
     runs-on: ubuntu-latest
