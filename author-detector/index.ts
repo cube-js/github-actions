@@ -48,6 +48,24 @@ class AuthorDetector extends AutomaticAction {
         }
     }
 
+    protected async onP() {
+        const { data: issue } = await this.api.issues.get({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: github.context.issue.number,
+        });
+
+        if (issue.user.login) {
+            await this.addLabel(
+                issue,
+                await this.checkMembershipForUser(
+                    issue.user.login.toLowerCase(),
+                    github.context.repo.owner
+                )
+            );
+        }
+    }
+
     protected async onSchedule(): Promise<void> {
         const prs = await this.api.pulls.list({
             owner: github.context.repo.owner,
@@ -58,33 +76,29 @@ class AuthorDetector extends AutomaticAction {
             per_page: 50,
         });
         if (prs.data.length) {
-            const prsWithoutLabels = prs.data.filter(
-                (pr) => {
-                    const labels = pr.labels.map((label) => label.name);
+            const prsWithoutLabels = prs.data.filter((pr) => {
+                const labels = pr.labels.map((label) => label.name);
 
-                    return !(labels.includes(CORE_LABEL) || labels.includes(COMMUNITY_LABEL))
-                }
-            );
+                return !(labels.includes(CORE_LABEL) || labels.includes(COMMUNITY_LABEL))
+            });
 
-            const users = Array.from(
-                new Set(
-                    prsWithoutLabels.map((pr) => pr.user.login.toLowerCase()),
-                ),
-            );
+            const userMaps = new Map();
 
-            const map = new Map();
+            for (const pr of prsWithoutLabels) {
+                userMaps.set(pr.user.login.toLowerCase(), false);
+            }
 
             await Promise.all(
-                users.map(
-                    async (login: string) => {
-                        const isMember = await this.checkMembershipForUser(login, github.context.repo.owner);
-                        map.set(login, isMember);
-                    },
-                )
+                Array.from(userMaps.keys()).map(async (login: string) => {
+                    userMaps.set(
+                        login,
+                        await this.checkMembershipForUser(login, github.context.repo.owner)
+                    );
+                })
             );
 
             for (const pr of prsWithoutLabels) {
-                await this.addLabel(pr, map.get(pr.user.login.toLowerCase()));
+                await this.addLabel(pr, userMaps.get(pr.user.login.toLowerCase()));
             }
         }
     }

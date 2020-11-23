@@ -28,5 +28,5 @@ export abstract class AbstractAction {
         }
     }
 
-    abstract async handle(): Promise<void>;
+    abstract handle(): Promise<void>;
 }

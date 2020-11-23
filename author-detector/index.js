@@ -36,6 +36,16 @@ class AuthorDetector extends automatic_action_1.AutomaticAction {
             await this.addLabel(issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
         }
     }
+    async onP() {
+        const { data: issue } = await this.api.issues.get({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: github.context.issue.number,
+        });
+        if (issue.user.login) {
+            await this.addLabel(issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
+        }
+    }
     async onSchedule() {
         const prs = await this.api.pulls.list({
             owner: github.context.repo.owner,
@@ -50,14 +60,15 @@ class AuthorDetector extends automatic_action_1.AutomaticAction {
                 const labels = pr.labels.map((label) => label.name);
                 return !(labels.includes(CORE_LABEL) || labels.includes(COMMUNITY_LABEL));
             });
-            const users = Array.from(new Set(prsWithoutLabels.map((pr) => pr.user.login.toLowerCase())));
-            const map = new Map();
-            await Promise.all(users.map(async (login) => {
-                const isMember = await this.checkMembershipForUser(login, github.context.repo.owner);
-                map.set(login, isMember);
+            const userMaps = new Map();
+            for (const pr of prsWithoutLabels) {
+                userMaps.set(pr.user.login.toLowerCase(), false);
+            }
+            await Promise.all(Array.from(userMaps.keys()).map(async (login) => {
+                userMaps.set(login, await this.checkMembershipForUser(login, github.context.repo.owner));
             }));
             for (const pr of prsWithoutLabels) {
-                await this.addLabel(pr, map.get(pr.user.login.toLowerCase()));
+                await this.addLabel(pr, userMaps.get(pr.user.login.toLowerCase()));
             }
         }
     }
