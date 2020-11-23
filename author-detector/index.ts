@@ -1,40 +1,15 @@
-import * as core from '@actions/core'
 import * as github from '@actions/github';
+import {AutomaticAction} from "./automatic-action";
+import {getRequiredInput} from "./action";
+import {PullsListResponseData} from "@octokit/types/dist-types/generated/Endpoints";
 
-const getRequiredInput = (name: string) => {
-    const value = core.getInput(name);
-    if (value) {
-        return value;
-    }
+type Unpacked<T> = T extends (infer U)[] ? U : T;
 
-    throw new Error(
-        `Unable to get require input parameter: ${name}`,
-    );
-}
+const CORE_LABEL = getRequiredInput('coreLabel');
+const COMMUNITY_LABEL = getRequiredInput('communityLabel');
 
-abstract class AbstractAction {
-    constructor(
-        protected readonly api = github.getOctokit(
-            getRequiredInput('token')
-        )
-    ) {
-    }
-
-    public async run() {
-        try {
-          await this.handle();
-        } catch (error) {
-          core.setFailed(error.message)
-        }
-    }
-
-    abstract async handle(): Promise<void>;
-}
-
-class AuthorDetector extends AbstractAction {
-    protected async addLabel(login: string) {
-        const isMember = await this.checkMembershipForUser(login.toLowerCase(), github.context.repo.owner);
-
+class AuthorDetector extends AutomaticAction {
+    protected async addLabel(issue: { number: number }, isMember: boolean) {
         if (isMember) {
             if (getRequiredInput('addCoreLabel') === 'false') {
                 return;
@@ -46,20 +21,20 @@ class AuthorDetector extends AbstractAction {
         }
 
         const label = getRequiredInput(
-            isMember ? 'coreLabel' : 'communityLabel'
+            isMember ? CORE_LABEL : COMMUNITY_LABEL
         );
 
         await this.api.issues.addLabels({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            issue_number: github.context.issue.number,
+            issue_number: issue.number,
             labels: [
                 label,
             ],
         });
     }
 
-    protected async onCreatedIssue() {
+    protected async onIssueOpened() {
         const { data: issue } = await this.api.issues.get({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
@@ -67,28 +42,55 @@ class AuthorDetector extends AbstractAction {
         });
 
         if (issue.user.login) {
-            await this.addLabel(issue.user.login);
+            await this.addLabel(
+                issue,
+                await this.checkMembershipForUser(
+                    issue.user.login.toLowerCase(),
+                    github.context.repo.owner
+                )
+            );
         }
     }
 
-    protected async onCreatedPullRequest() {
-        const { data: pullRequest } = await this.api.pulls.get({
+    protected async onSchedule(): Promise<void> {
+        const prs = await this.api.pulls.list({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            pull_number: Number(github.context.payload.pull_request?.number),
+            state: 'open',
+            sort: 'created',
+            direction: 'desc',
+            per_page: 50,
         });
+        if (prs.data.length) {
+            const prsWithoutLabels = prs.data.filter(
+                (pr) => {
+                    const labels = pr.labels.map((label) => label.name);
 
-        if (pullRequest.user.login) {
-            await this.addLabel(pullRequest.user.login);
+                    return !(labels.includes(CORE_LABEL) || labels.includes(COMMUNITY_LABEL))
+                }
+            );
+
+            const users = Array.from(
+                new Set(
+                    prsWithoutLabels.map((pr) => pr.user.login.toLowerCase()),
+                ),
+            );
+
+            const map = new Map();
+
+            await Promise.all(
+                users.map(
+                    async (login: string) => {
+                        const isMember = await this.checkMembershipForUser(login, github.context.repo.owner);
+                        map.set(login, isMember);
+                    },
+                )
+            );
+
+            for (const pr of prsWithoutLabels) {
+                await this.addLabel(pr, map.get(pr.user.login.toLowerCase()));
+            }
         }
-    }
-
-    public async handle(): Promise<void> {
-        if (github.context.payload.pull_request) {
-            return this.onCreatedPullRequest();
-        }
-
-        return this.onCreatedIssue();
     }
 
     protected async checkMembershipForUser(username: string, org: string) {
