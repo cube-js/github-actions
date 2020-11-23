@@ -2,7 +2,7 @@ name: Author Detector for Pull Requests
 on:
   pull_request_target:
     types: [opened]
-  pull_requests:
+  pull_request:
     types: [opened]
 
 jobs:
