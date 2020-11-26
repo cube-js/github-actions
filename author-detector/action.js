@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AbstractAction = exports.getRequiredInput = void 0;
+exports.AbstractAction = exports.isBot = exports.getRequiredInput = void 0;
 const github = require("@actions/github");
 const core = require("@actions/core");
 const getRequiredInput = (name) => {
@@ -11,6 +11,13 @@ const getRequiredInput = (name) => {
     throw new Error(`Unable to get require input parameter: ${name}`);
 };
 exports.getRequiredInput = getRequiredInput;
+const BOTS = [
+    'dependabot-preview'
+];
+function isBot(login) {
+    return BOTS.includes(login.toLowerCase());
+}
+exports.isBot = isBot;
 class AbstractAction {
     constructor(api = github.getOctokit(exports.getRequiredInput('token'))) {
         this.api = api;

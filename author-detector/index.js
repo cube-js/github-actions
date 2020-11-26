@@ -33,10 +33,16 @@ class AuthorDetector extends automatic_action_1.AutomaticAction {
             issue_number: github.context.issue.number,
         });
         if (issue.user.login) {
+            if (action_1.isBot(issue.user.login)) {
+                return;
+            }
             await this.addLabel(issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
         }
     }
     async onPullRequestTargetOpened(payload) {
+        if (action_1.isBot(payload.sender.login)) {
+            return;
+        }
         await this.addLabel(payload, await this.checkMembershipForUser(payload.sender.login.toLowerCase(), payload.repository.owner.login));
     }
     async onPullRequestOpened(ctx) {
@@ -49,6 +55,9 @@ class AuthorDetector extends automatic_action_1.AutomaticAction {
             issue_number: github.context.issue.number,
         });
         if (issue.user.login) {
+            if (action_1.isBot(issue.user.login)) {
+                return;
+            }
             await this.addLabel(github.context.issue, await this.checkMembershipForUser(issue.user.login.toLowerCase(), github.context.repo.owner));
         }
     }
@@ -63,6 +72,9 @@ class AuthorDetector extends automatic_action_1.AutomaticAction {
         });
         if (prs.data.length) {
             const prsWithoutLabels = prs.data.filter((pr) => {
+                if (action_1.isBot(pr.user.login)) {
+                    return false;
+                }
                 const labels = pr.labels.map((label) => label.name);
                 return !(labels.includes(CORE_LABEL) || labels.includes(COMMUNITY_LABEL));
             });

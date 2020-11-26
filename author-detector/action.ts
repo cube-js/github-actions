@@ -12,6 +12,14 @@ export const getRequiredInput = (name: string) => {
     );
 }
 
+const BOTS = [
+    'dependabot-preview'
+];
+
+export function isBot(login: string) {
+    return BOTS.includes(login.toLowerCase());
+}
+
 export abstract class AbstractAction {
     constructor(
         protected readonly api = github.getOctokit(

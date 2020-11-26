@@ -1,6 +1,6 @@
 import * as github from '@actions/github';
 import {AutomaticAction, OnPullRequestOpenedCtx} from "./automatic-action";
-import {getRequiredInput} from "./action";
+import {getRequiredInput, isBot} from "./action";
 import {PullsListResponseData} from "@octokit/types/dist-types/generated/Endpoints";
 import {WebhookEvent} from "@octokit/webhooks/dist-types/types";
 import {EventPayloads} from "@octokit/webhooks/dist-types/generated/event-payloads";
@@ -40,6 +40,10 @@ class AuthorDetector extends AutomaticAction {
         });
 
         if (issue.user.login) {
+            if (isBot(issue.user.login)) {
+                return;
+            }
+
             await this.addLabel(
                 issue,
                 await this.checkMembershipForUser(
@@ -51,6 +55,10 @@ class AuthorDetector extends AutomaticAction {
     }
 
     protected async onPullRequestTargetOpened(payload: EventPayloads.WebhookPayloadPullRequest) {
+        if (isBot(payload.sender.login)) {
+            return;
+        }
+
         await this.addLabel(
             payload,
             await this.checkMembershipForUser(
@@ -72,6 +80,10 @@ class AuthorDetector extends AutomaticAction {
         });
 
         if (issue.user.login) {
+            if (isBot(issue.user.login)) {
+                return;
+            }
+
             await this.addLabel(
                 github.context.issue,
                 await this.checkMembershipForUser(
@@ -93,6 +105,10 @@ class AuthorDetector extends AutomaticAction {
         });
         if (prs.data.length) {
             const prsWithoutLabels = prs.data.filter((pr) => {
+                if (isBot(pr.user.login)) {
+                    return false;
+                }
+
                 const labels = pr.labels.map((label) => label.name);
 
                 return !(labels.includes(CORE_LABEL) || labels.includes(COMMUNITY_LABEL))
