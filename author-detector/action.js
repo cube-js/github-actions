@@ -12,7 +12,9 @@ const getRequiredInput = (name) => {
 };
 exports.getRequiredInput = getRequiredInput;
 const BOTS = [
-    'dependabot-preview'
+    'dependabot-preview',
+    'dependabot-bot',
+    'dependabot'
 ];
 function isBot(login) {
     return BOTS.includes(login.toLowerCase());

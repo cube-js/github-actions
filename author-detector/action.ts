@@ -13,7 +13,9 @@ export const getRequiredInput = (name: string) => {
 }
 
 const BOTS = [
-    'dependabot-preview'
+    'dependabot-preview',
+    'dependabot-bot',
+    'dependabot'
 ];
 
 export function isBot(login: string) {
