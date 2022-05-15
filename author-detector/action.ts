@@ -19,7 +19,7 @@ const BOTS = [
 ];
 
 export function isBot(login: string) {
-    return BOTS.includes(login.toLowerCase());
+    return BOTS.includes(login.toLowerCase()) || login.indexOf('app/') !== -1;
 }
 
 export abstract class AbstractAction {

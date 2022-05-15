@@ -17,7 +17,7 @@ const BOTS = [
     'dependabot'
 ];
 function isBot(login) {
-    return BOTS.includes(login.toLowerCase());
+    return BOTS.includes(login.toLowerCase()) || login.indexOf('app/') !== -1;
 }
 exports.isBot = isBot;
 class AbstractAction {
