@@ -17,5 +17,5 @@ inputs:
     description: Label for community authors?
     default: "true"
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'index.js'
